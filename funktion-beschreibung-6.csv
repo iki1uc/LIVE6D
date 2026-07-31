@@ -1,0 +1,7 @@
+﻿Funktion,Beschreibung
+756 Punkte,Jede Achse als 3D‑Punkt
+Rotation,Kamera dreht sich um das Zentrum
+Pulse‑Shader,Farbe pulsiert mit Zeit
+Reset,Setzt Rotation zurück
+WebGL‑Basis,Vollständig kompatibel mit deinen JSON‑Daten
+Erweiterbar,"Für Morph, RUN, CHESS, Shader‑Effekte"
