@@ -1,1 +1,51 @@
+{
+  "continium_room": {
+    "timestamp": "t",
+    "morph_function": {
+      "sin_t": "sin(t)",
+      "cos_t": "cos(t)",
+      "sin_2t": "sin(2t)"
+    },
+
+    "prefetch": {
+      "matrix_3x3": {
+        "A": ["A0", "A1", "A2"],
+        "B": ["B0", "B1", "B2"],
+        "C": ["C0", "C1", "C2"]
+      },
+      "vector_3x1": ["L0", "L1", "L2"]
+    },
+
+    "grid_in_9x9": {
+      "values": "i0 ... i80"
+    },
+
+    "grid_out_9x9": {
+      "values": "o0 ... o80"
+    },
+
+    "axes_756": {
+      "vector": "v0 ... v755",
+      "definition": "axes[i].id * 0.01"
+    },
+
+    "room_operator": {
+      "formula": "(IN ⊕ OUT) ⊗ (P3x3 ⊗ P3x1)",
+      "expanded": {
+        "in_out_merge": "IN ⊕ OUT",
+        "prefetch_merge": "P3x3 ⊗ P3x1"
+      }
+    },
+
+    "final_room": {
+      "formula": "ROOM(t) = (IN ⊕ OUT) ⊗ (P3x3 ⊗ P3x1) ⊕ V · f(t)"
+    },
+
+    "calibration": {
+      "A": "ROOM(t)",
+      "B": "ROOM(t + Δt)",
+      "C": "ROOM(t) / sqrt(ROOM(t)^2)"
+    }
+  }
+}
 
