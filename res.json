@@ -1,0 +1,18 @@
+export async function lichessCreateGame(){
+  const res = await fetch("https://lichess.org/api/challenge/open", {
+    method: "POST"
+  });
+  const data = await res.json();
+  return data.id;
+}
+
+export async function lichessSendMove(gameId, move){
+  await fetch(`https://lichess.org/api/board/game/${gameId}/move/${move}`, {
+    method: "POST"
+  });
+}
+
+export async function lichessGetPGN(gameId){
+  const res = await fetch(`https://lichess.org/game/export/${gameId}.pgn`);
+  return await res.text();
+}
