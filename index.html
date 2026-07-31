@@ -10,6 +10,114 @@ export function startChess9() {
 
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+precision mediump float;
+
+varying float v_energySolar;
+varying float v_energyWind;
+varying float v_energyTemp;
+varying float v_energyMag;
+varying float v_energyLight;
+varying float v_energyFreq;
+varying float v_energyGeo;
+
+uniform vec3 u_colorSolar;
+uniform vec3 u_colorWind;
+uniform vec3 u_colorTemp;
+uniform vec3 u_colorMag;
+uniform vec3 u_colorLight;
+uniform vec3 u_colorFreq;
+uniform vec3 u_colorGeo;
+
+void main() {
+
+    // Normierung der Energiekanäle
+    float total =
+        v_energySolar +
+        v_energyWind +
+        v_energyTemp +
+        v_energyMag +
+        v_energyLight +
+        v_energyFreq +
+        v_energyGeo;
+
+    float n = clamp(total / 7.0, 0.0, 1.0);
+
+    // Multi‑Farbmischung
+    vec3 color =
+          u_colorSolar * v_energySolar
+        + u_colorWind  * v_energyWind
+        + u_colorTemp  * v_energyTemp
+        + u_colorMag   * v_energyMag
+        + u_colorLight * v_energyLight
+        + u_colorFreq  * v_energyFreq
+        + u_colorGeo   * v_energyGeo;
+
+    // Normieren
+    color = color / total;
+
+    gl_FragColor = vec4(color, 1.0);
+}
+attribute vec3 a_position;
+
+attribute float a_energySolar;
+attribute float a_energyWind;
+attribute float a_energyTemp;
+attribute float a_energyMag;
+attribute float a_energyLight;
+attribute float a_energyFreq;
+attribute float a_energyGeo;
+
+varying float v_energySolar;
+varying float v_energyWind;
+varying float v_energyTemp;
+varying float v_energyMag;
+varying float v_energyLight;
+varying float v_energyFreq;
+varying float v_energyGeo;
+
+void main(){
+    v_energySolar = a_energySolar;
+    v_energyWind  = a_energyWind;
+    v_energyTemp  = a_energyTemp;
+    v_energyMag   = a_energyMag;
+    v_energyLight = a_energyLight;
+    v_energyFreq  = a_energyFreq;
+    v_energyGeo   = a_energyGeo;
+
+    gl_Position = vec4(a_position, 1.0);
+}
+
+const solarArray = new Float32Array(81);
+const windArray  = new Float32Array(81);
+const tempArray  = new Float32Array(81);
+const magArray   = new Float32Array(81);
+const lightArray = new Float32Array(81);
+const freqArray  = new Float32Array(81);
+const geoArray   = new Float32Array(81);
+for(let i = 0; i < 81; i++){
+    solarArray[i] = board[i].energySolar;
+    windArray[i]  = board[i].energyWind;
+    tempArray[i]  = board[i].energyTemp;
+    magArray[i]   = board[i].energyMag;
+    lightArray[i] = board[i].energyLight;
+    freqArray[i]  = board[i].energyFreq;
+    geoArray[i]   = board[i].energyGeo;
+}
+
+  board[i].energySolar = computeSolar(board[i].pos);
+board[i].energyWind  = computeWind(board[i].pos);
+board[i].energyTemp  = computeTemp(board[i].pos);
+board[i].energyMag   = computeMag(board[i].pos);
+board[i].energyLight = computeLight(board[i].pos);
+board[i].energyFreq  = computeFreq(board[i].pos);
+board[i].energyGeo   = computeGeo(board[i].pos);
+gl.uniform3f(u_colorSolar, 1.0, 0.9, 0.0);  // Gelb
+gl.uniform3f(u_colorWind,  0.0, 0.7, 1.0);  // Cyan
+gl.uniform3f(u_colorTemp,  1.0, 0.3, 0.0);  // Orange
+gl.uniform3f(u_colorMag,   0.6, 0.0, 1.0);  // Violett
+gl.uniform3f(u_colorLight, 1.0, 1.0, 1.0);  // Weiß
+gl.uniform3f(u_colorFreq,  0.0, 1.0, 0.5);  // Türkis
+gl.uniform3f(u_colorGeo,   0.3, 0.8, 0.2);  // Grün
 
   /* Shader */
   const vertex = `
