@@ -1,445 +1,138 @@
-export function startChess9() {
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Ridvans Energie‑Schachraum</title>
+<style>
+    body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        font-family: sans-serif;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
 
-  const canvas = document.getElementById("live6dCanvas");
-  const gl = canvas.getContext("webgl");
+<script>
+const canvas = document.getElementById("scene");
+const gl = canvas.getContext("webgl");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-  if (!gl) {
+if (!gl) {
     alert("WebGL wird nicht unterstützt.");
-    return;
-  }
+}
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+// --- Shader ---
+const vertex = `
+attribute vec3 pos;
+attribute float energy;
+
+uniform mat4 rot;
+uniform float time;
+
+varying float v_energy;
+
+vec3 morph(vec3 p){
+    p.x += sin(time + p.x * 3.0) * 0.05;
+    p.y += cos(time + p.z * 2.0) * 0.05;
+    p.z += sin(time + p.y * 4.0) * 0.05;
+    return p;
+}
+
+void main(){
+    v_energy = energy;
+    vec3 m = morph(pos);
+    gl_Position = rot * vec4(m, 1.0);
+    gl_PointSize = 10.0 + v_energy * 10.0;
+}
+`;
+
+const fragment = `
 precision mediump float;
 
-varying float v_energySolar;
-varying float v_energyWind;
-varying float v_energyTemp;
-varying float v_energyMag;
-varying float v_energyLight;
-varying float v_energyFreq;
-varying float v_energyGeo;
+varying float v_energy;
+uniform float time;
 
-uniform vec3 u_colorSolar;
-uniform vec3 u_colorWind;
-uniform vec3 u_colorTemp;
-uniform vec3 u_colorMag;
-uniform vec3 u_colorLight;
-uniform vec3 u_colorFreq;
-uniform vec3 u_colorGeo;
+void main(){
+    float pulse = abs(sin(time * 0.8));
+    float glow = v_energy * 0.8 + pulse * 0.2;
 
-void main() {
-
-    // Normierung der Energiekanäle
-    float total =
-        v_energySolar +
-        v_energyWind +
-        v_energyTemp +
-        v_energyMag +
-        v_energyLight +
-        v_energyFreq +
-        v_energyGeo;
-
-    float n = clamp(total / 7.0, 0.0, 1.0);
-
-    // Multi‑Farbmischung
-    vec3 color =
-          u_colorSolar * v_energySolar
-        + u_colorWind  * v_energyWind
-        + u_colorTemp  * v_energyTemp
-        + u_colorMag   * v_energyMag
-        + u_colorLight * v_energyLight
-        + u_colorFreq  * v_energyFreq
-        + u_colorGeo   * v_energyGeo;
-
-    // Normieren
-    color = color / total;
+    vec3 color = vec3(
+        0.3 + glow,
+        0.1 + glow * 0.5,
+        0.6 + glow * 0.3
+    );
 
     gl_FragColor = vec4(color, 1.0);
 }
-attribute vec3 a_position;
+`;
 
-attribute float a_energySolar;
-attribute float a_energyWind;
-attribute float a_energyTemp;
-attribute float a_energyMag;
-attribute float a_energyLight;
-attribute float a_energyFreq;
-attribute float a_energyGeo;
-
-varying float v_energySolar;
-varying float v_energyWind;
-varying float v_energyTemp;
-varying float v_energyMag;
-varying float v_energyLight;
-varying float v_energyFreq;
-varying float v_energyGeo;
-
-void main(){
-    v_energySolar = a_energySolar;
-    v_energyWind  = a_energyWind;
-    v_energyTemp  = a_energyTemp;
-    v_energyMag   = a_energyMag;
-    v_energyLight = a_energyLight;
-    v_energyFreq  = a_energyFreq;
-    v_energyGeo   = a_energyGeo;
-
-    gl_Position = vec4(a_position, 1.0);
-}
-
-const solarArray = new Float32Array(81);
-const windArray  = new Float32Array(81);
-const tempArray  = new Float32Array(81);
-const magArray   = new Float32Array(81);
-const lightArray = new Float32Array(81);
-const freqArray  = new Float32Array(81);
-const geoArray   = new Float32Array(81);
-for(let i = 0; i < 81; i++){
-    solarArray[i] = board[i].energySolar;
-    windArray[i]  = board[i].energyWind;
-    tempArray[i]  = board[i].energyTemp;
-    magArray[i]   = board[i].energyMag;
-    lightArray[i] = board[i].energyLight;
-    freqArray[i]  = board[i].energyFreq;
-    geoArray[i]   = board[i].energyGeo;
-}
-
-  board[i].energySolar = computeSolar(board[i].pos);
-board[i].energyWind  = computeWind(board[i].pos);
-board[i].energyTemp  = computeTemp(board[i].pos);
-board[i].energyMag   = computeMag(board[i].pos);
-board[i].energyLight = computeLight(board[i].pos);
-board[i].energyFreq  = computeFreq(board[i].pos);
-board[i].energyGeo   = computeGeo(board[i].pos);
-gl.uniform3f(u_colorSolar, 1.0, 0.9, 0.0);  // Gelb
-gl.uniform3f(u_colorWind,  0.0, 0.7, 1.0);  // Cyan
-gl.uniform3f(u_colorTemp,  1.0, 0.3, 0.0);  // Orange
-gl.uniform3f(u_colorMag,   0.6, 0.0, 1.0);  // Violett
-gl.uniform3f(u_colorLight, 1.0, 1.0, 1.0);  // Weiß
-gl.uniform3f(u_colorFreq,  0.0, 1.0, 0.5);  // Türkis
-gl.uniform3f(u_colorGeo,   0.3, 0.8, 0.2);  // Grün
-
-  /* Shader */
-  const vertex = `
-    attribute vec3 pos;
-    uniform mat4 rot;
-    uniform float time;
-
-    vec3 morph(vec3 p){
-      p.x += sin(time + p.x * 3.0) * 0.05;
-      p.y += cos(time + p.z * 2.0) * 0.05;
-      p.z += sin(time + p.y * 4.0) * 0.05;
-      return p;
-    }
-
-    void main(){
-      vec3 m = morph(pos);
-      gl_Position = rot * vec4(m, 1.0);
-      gl_PointSize = 8.0;
-    }
-  `;
-const WHITE = "w";
-const BLACK = "b";
-
-const PAWN = "pawn";
-const ROOK = "rook";
-const KNIGHT = "knight";
-const BISHOP = "bishop";
-const QUEEN = "queen";
-const KING = "king";
-const board = new Array(81).fill(null);
-
-function placePieces(){
-  // Weiße Bauern
-  for(let i=9; i<18; i++) board[i] = {color: WHITE, type: PAWN};
-
-  // Schwarze Bauern
-  for(let i=63; i<72; i++) board[i] = {color: BLACK, type: PAWN};
-
-  // Türme
-  board[0] = {color: WHITE, type: ROOK};
-  board[8] = {color: WHITE, type: ROOK};
-  board[72] = {color: BLACK, type: ROOK};
-  board[80] = {color: BLACK, type: ROOK};
-
-  // Springer
-  board[1] = {color: WHITE, type: KNIGHT};
-  board[7] = {color: WHITE, type: KNIGHT};
-  board[73] = {color: BLACK, type: KNIGHT};
-  board[79] = {color: BLACK, type: KNIGHT};
-
-  // Läufer
-  board[2] = {color: WHITE, type: BISHOP};
-  board[6] = {color: WHITE, type: BISHOP};
-  board[74] = {color: BLACK, type: BISHOP};
-  board[78] = {color: BLACK, type: BISHOP};
-
-  // Damen
-  board[3] = {color: WHITE, type: QUEEN};
-  board[75] = {color: BLACK, type: QUEEN};
-
-  // Könige
-  board[4] = {color: WHITE, type: KING};
-  board[76] = {color: BLACK, type: KING};
-}
-const DIRS_ROOK = [
-  {r:1,c:0}, {r:-1,c:0}, {r:0,c:1}, {r:0,c:-1}
-];
-
-const DIRS_BISHOP = [
-  {r:1,c:1}, {r:1,c:-1}, {r:-1,c:1}, {r:-1,c:-1}
-];
-
-const DIRS_QUEEN = [...DIRS_ROOK, ...DIRS_BISHOP];
-
-const DIRS_KING = DIRS_QUEEN;
-
-const KNIGHT_MOVES = [
-  {r:2,c:1}, {r:2,c:-1}, {r:-2,c:1}, {r:-2,c:-1},
-  {r:1,c:2}, {r:1,c:-2}, {r:-1,c:2}, {r:-1,c:-2}
-];
-function inside(r,c){
-  return r>=0 && r<9 && c>=0 && c<9;
-}
-
-function getPiece(r,c){
-  return board[toIndex(r,c)];
-}
-
-function isEnemy(a,b){
-  return a && b && a.color !== b.color;
-}
-function kingMoves(r,c,piece){
-  const moves = [];
-  for(const d of DIRS_KING){
-    const nr = r + d.r;
-    const nc = c + d.c;
-    if(!inside(nr,nc)) continue;
-    const target = getPiece(nr,nc);
-    if(!target || isEnemy(piece,target)) moves.push(toIndex(nr,nc));
-  }
-  return moves;
-}
-function queenMoves(r,c,piece){
-  return rookMoves(r,c,piece).concat(bishopMoves(r,c,piece));
-}
-function rookMoves(r,c,piece){
-  const moves = [];
-  for(const d of DIRS_ROOK){
-    let nr = r + d.r;
-    let nc = c + d.c;
-    while(inside(nr,nc)){
-      const target = getPiece(nr,nc);
-      if(!target){
-        moves.push(toIndex(nr,nc));
-      } else {
-        if(isEnemy(piece,target)) moves.push(toIndex(nr,nc));
-        break;
-      }
-      nr += d.r;
-      nc += d.c;
-    }
-  }
-  return moves;
-}
-function bishopMoves(r,c,piece){
-  const moves = [];
-  for(const d of DIRS_BISHOP){
-    let nr = r + d.r;
-    let nc = c + d.c;
-    while(inside(nr,nc)){
-      const target = getPiece(nr,nc);
-      if(!target){
-        moves.push(toIndex(nr,nc));
-      } else {
-        if(isEnemy(piece,target)) moves.push(toIndex(nr,nc));
-        break;
-      }
-      nr += d.r;
-      nc += d.c;
-    }
-  }
-  return moves;
-}
-function knightMoves(r,c,piece){
-  const moves = [];
-  for(const m of KNIGHT_MOVES){
-    const nr = r + m.r;
-    const nc = c + m.c;
-    if(!inside(nr,nc)) continue;
-    const target = getPiece(nr,nc);
-    if(!target || isEnemy(piece,target)) moves.push(toIndex(nr,nc));
-  }
-  return moves;
-}
-function pawnMoves(r,c,piece){
-  const moves = [];
-  const dir = piece.color === WHITE ? 1 : -1;
-
-  // Vorwärts
-  const nr = r + dir;
-  if(inside(nr,c) && !getPiece(nr,c)){
-    moves.push(toIndex(nr,c));
-  }
-
-  // Schlagen
-  for(const dc of [-1,1]){
-    const nc = c + dc;
-    if(inside(nr,nc)){
-      const target = getPiece(nr,nc);
-      if(target && isEnemy(piece,target)){
-        moves.push(toIndex(nr,nc));
-      }
-    }
-  }
-
-  return moves;
-}
-function legalMoves(index){
-  const {row, col} = toCoord(index);
-  const piece = board[index];
-  if(!piece) return [];
-
-  switch(piece.type){
-    case KING: return kingMoves(row,col,piece);
-    case QUEEN: return queenMoves(row,col,piece);
-    case ROOK: return rookMoves(row,col,piece);
-    case BISHOP: return bishopMoves(row,col,piece);
-    case KNIGHT: return knightMoves(row,col,piece);
-    case PAWN: return pawnMoves(row,col,piece);
-  }
-}
-function movePiece(from, to){
-  const moves = legalMoves(from);
-  if(!moves.includes(to)) return false;
-
-  board[to] = board[from];
-  board[from] = null;
-
-  return true;
-}
-
-  const fragment = `
-    precision mediump float;
-    uniform float time;
-    void main(){
-      gl_FragColor = vec4(
-        abs(sin(time)),
-        abs(cos(time * 0.5)),
-        abs(sin(time * 0.3)),
-        1.0
-      );
-    }
-  `;
-function toIndex(row, col){
-  return row * 9 + col;
-}
-
-function toCoord(index){
-  return {
-    row: Math.floor(index / 9),
-    col: index % 9
-  };
-}
-
-  function compile(type, src){
+// --- Compile ---
+function compile(type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
     return s;
-  }
+}
 
-  const vs = compile(gl.VERTEX_SHADER, vertex);
-  const fs = compile(gl.FRAGMENT_SHADER, fragment);
+const vs = compile(gl.VERTEX_SHADER, vertex);
+const fs = compile(gl.FRAGMENT_SHADER, fragment);
 
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
+const prog = gl.createProgram();
+gl.attachShader(prog, vs);
+gl.attachShader(prog, fs);
+gl.linkProgram(prog);
+gl.useProgram(prog);
 
-  /* 9×9 Brett erzeugen */
-  const board = [];
+// --- 9×9 Feld ---
+const points = [];
+const energies = [];
 
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
+for (let r = 0; r < 9; r++){
+    for (let c = 0; c < 9; c++){
+        const x = (c - 4) * 0.25;
+        const y = 0;
+        const z = (r - 4) * 0.25;
 
-      const x = (col - 4) * 0.25;
-      const y = 0;
-      const z = (row - 4) * 0.25;
+        points.push(x, y, z);
 
-      board.push(x, y, z);
+        const dist = Math.sqrt(x*x + z*z);
+        const energy = Math.max(0, 1.0 - dist);
+        energies.push(energy);
     }
-  }
+}
 
-  /* Figuren platzieren */
-  const pieces = new Array(81).fill(null);
+// --- Buffer ---
+const bufPos = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
-  function placePieces(){
-    // Bauern
-    for(let i=9; i<18; i++) pieces[i] = "pawn";
-    for(let i=63; i<72; i++) pieces[i] = "pawn";
+const posLoc = gl.getAttribLocation(prog, "pos");
+gl.enableVertexAttribArray(posLoc);
+gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
 
-    // Türme
-    pieces[0] = "rook";
-    pieces[8] = "rook";
-    pieces[72] = "rook";
-    pieces[80] = "rook";
+const bufEnergy = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, bufEnergy);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(energies), gl.STATIC_DRAW);
 
-    // Springer
-    pieces[1] = "knight";
-    pieces[7] = "knight";
-    pieces[73] = "knight";
-    pieces[79] = "knight";
+const energyLoc = gl.getAttribLocation(prog, "energy");
+gl.enableVertexAttribArray(energyLoc);
+gl.vertexAttribPointer(energyLoc, 1, gl.FLOAT, false, 0, 0);
 
-    // Läufer
-    pieces[2] = "bishop";
-    pieces[6] = "bishop";
-    pieces[74] = "bishop";
-    pieces[78] = "bishop";
+// --- Uniforms ---
+const rotLoc = gl.getUniformLocation(prog, "rot");
+const timeLoc = gl.getUniformLocation(prog, "time");
 
-    // Dame
-    pieces[3] = "queen";
-    pieces[75] = "queen";
+let angle = 0;
 
-    // König
-    pieces[4] = "king";
-    pieces[76] = "king";
-  }
-
-  placePieces();
-
-  /* Brett + Figuren kombinieren */
-  const points = [];
-
-  for(let i=0;i<81;i++){
-    const x = board[i*3];
-    const y = board[i*3+1];
-    const z = board[i*3+2];
-
-    // Brettpunkt
-    points.push(x, y, z);
-
-    // Figurenpunkt
-    if(pieces[i]){
-      points.push(x, y+0.15, z);
-    }
-  }
-
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
-
-  const pos = gl.getAttribLocation(prog, "pos");
-  gl.enableVertexAttribArray(pos);
-  gl.vertexAttribPointer(pos, 3, gl.FLOAT, false, 0, 0);
-
-  const rotLoc = gl.getUniformLocation(prog, "rot");
-  const timeLoc = gl.getUniformLocation(prog, "time");
-
-  let angle = 0;
-
-  function draw(){
+// --- Draw ---
+function draw(){
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -449,10 +142,10 @@ function toCoord(index){
     const s = Math.sin(angle);
 
     const rot = new Float32Array([
-      c, 0, s, 0,
-      0, 1, 0, 0,
-      -s, 0, c, 0,
-      0, 0, 0, 1
+        c, 0, s, 0,
+        0, 1, 0, 0,
+        -s,0,c,0,
+        0,0,0,1
     ]);
 
     gl.uniformMatrix4fv(rotLoc, false, rot);
@@ -461,7 +154,9 @@ function toCoord(index){
     gl.drawArrays(gl.POINTS, 0, points.length / 3);
 
     requestAnimationFrame(draw);
-  }
-
-  draw();
 }
+
+draw();
+</script>
+</body>
+</html>
