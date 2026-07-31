@@ -30,6 +30,186 @@ export function startChess9() {
       gl_PointSize = 8.0;
     }
   `;
+const WHITE = "w";
+const BLACK = "b";
+
+const PAWN = "pawn";
+const ROOK = "rook";
+const KNIGHT = "knight";
+const BISHOP = "bishop";
+const QUEEN = "queen";
+const KING = "king";
+const board = new Array(81).fill(null);
+
+function placePieces(){
+  // Weiße Bauern
+  for(let i=9; i<18; i++) board[i] = {color: WHITE, type: PAWN};
+
+  // Schwarze Bauern
+  for(let i=63; i<72; i++) board[i] = {color: BLACK, type: PAWN};
+
+  // Türme
+  board[0] = {color: WHITE, type: ROOK};
+  board[8] = {color: WHITE, type: ROOK};
+  board[72] = {color: BLACK, type: ROOK};
+  board[80] = {color: BLACK, type: ROOK};
+
+  // Springer
+  board[1] = {color: WHITE, type: KNIGHT};
+  board[7] = {color: WHITE, type: KNIGHT};
+  board[73] = {color: BLACK, type: KNIGHT};
+  board[79] = {color: BLACK, type: KNIGHT};
+
+  // Läufer
+  board[2] = {color: WHITE, type: BISHOP};
+  board[6] = {color: WHITE, type: BISHOP};
+  board[74] = {color: BLACK, type: BISHOP};
+  board[78] = {color: BLACK, type: BISHOP};
+
+  // Damen
+  board[3] = {color: WHITE, type: QUEEN};
+  board[75] = {color: BLACK, type: QUEEN};
+
+  // Könige
+  board[4] = {color: WHITE, type: KING};
+  board[76] = {color: BLACK, type: KING};
+}
+const DIRS_ROOK = [
+  {r:1,c:0}, {r:-1,c:0}, {r:0,c:1}, {r:0,c:-1}
+];
+
+const DIRS_BISHOP = [
+  {r:1,c:1}, {r:1,c:-1}, {r:-1,c:1}, {r:-1,c:-1}
+];
+
+const DIRS_QUEEN = [...DIRS_ROOK, ...DIRS_BISHOP];
+
+const DIRS_KING = DIRS_QUEEN;
+
+const KNIGHT_MOVES = [
+  {r:2,c:1}, {r:2,c:-1}, {r:-2,c:1}, {r:-2,c:-1},
+  {r:1,c:2}, {r:1,c:-2}, {r:-1,c:2}, {r:-1,c:-2}
+];
+function inside(r,c){
+  return r>=0 && r<9 && c>=0 && c<9;
+}
+
+function getPiece(r,c){
+  return board[toIndex(r,c)];
+}
+
+function isEnemy(a,b){
+  return a && b && a.color !== b.color;
+}
+function kingMoves(r,c,piece){
+  const moves = [];
+  for(const d of DIRS_KING){
+    const nr = r + d.r;
+    const nc = c + d.c;
+    if(!inside(nr,nc)) continue;
+    const target = getPiece(nr,nc);
+    if(!target || isEnemy(piece,target)) moves.push(toIndex(nr,nc));
+  }
+  return moves;
+}
+function queenMoves(r,c,piece){
+  return rookMoves(r,c,piece).concat(bishopMoves(r,c,piece));
+}
+function rookMoves(r,c,piece){
+  const moves = [];
+  for(const d of DIRS_ROOK){
+    let nr = r + d.r;
+    let nc = c + d.c;
+    while(inside(nr,nc)){
+      const target = getPiece(nr,nc);
+      if(!target){
+        moves.push(toIndex(nr,nc));
+      } else {
+        if(isEnemy(piece,target)) moves.push(toIndex(nr,nc));
+        break;
+      }
+      nr += d.r;
+      nc += d.c;
+    }
+  }
+  return moves;
+}
+function bishopMoves(r,c,piece){
+  const moves = [];
+  for(const d of DIRS_BISHOP){
+    let nr = r + d.r;
+    let nc = c + d.c;
+    while(inside(nr,nc)){
+      const target = getPiece(nr,nc);
+      if(!target){
+        moves.push(toIndex(nr,nc));
+      } else {
+        if(isEnemy(piece,target)) moves.push(toIndex(nr,nc));
+        break;
+      }
+      nr += d.r;
+      nc += d.c;
+    }
+  }
+  return moves;
+}
+function knightMoves(r,c,piece){
+  const moves = [];
+  for(const m of KNIGHT_MOVES){
+    const nr = r + m.r;
+    const nc = c + m.c;
+    if(!inside(nr,nc)) continue;
+    const target = getPiece(nr,nc);
+    if(!target || isEnemy(piece,target)) moves.push(toIndex(nr,nc));
+  }
+  return moves;
+}
+function pawnMoves(r,c,piece){
+  const moves = [];
+  const dir = piece.color === WHITE ? 1 : -1;
+
+  // Vorwärts
+  const nr = r + dir;
+  if(inside(nr,c) && !getPiece(nr,c)){
+    moves.push(toIndex(nr,c));
+  }
+
+  // Schlagen
+  for(const dc of [-1,1]){
+    const nc = c + dc;
+    if(inside(nr,nc)){
+      const target = getPiece(nr,nc);
+      if(target && isEnemy(piece,target)){
+        moves.push(toIndex(nr,nc));
+      }
+    }
+  }
+
+  return moves;
+}
+function legalMoves(index){
+  const {row, col} = toCoord(index);
+  const piece = board[index];
+  if(!piece) return [];
+
+  switch(piece.type){
+    case KING: return kingMoves(row,col,piece);
+    case QUEEN: return queenMoves(row,col,piece);
+    case ROOK: return rookMoves(row,col,piece);
+    case BISHOP: return bishopMoves(row,col,piece);
+    case KNIGHT: return knightMoves(row,col,piece);
+    case PAWN: return pawnMoves(row,col,piece);
+  }
+}
+function movePiece(from, to){
+  const moves = legalMoves(from);
+  if(!moves.includes(to)) return false;
+
+  board[to] = board[from];
+  board[from] = null;
+
+  return true;
+}
 
   const fragment = `
     precision mediump float;
@@ -43,6 +223,16 @@ export function startChess9() {
       );
     }
   `;
+function toIndex(row, col){
+  return row * 9 + col;
+}
+
+function toCoord(index){
+  return {
+    row: Math.floor(index / 9),
+    col: index % 9
+  };
+}
 
   function compile(type, src){
     const s = gl.createShader(type);
