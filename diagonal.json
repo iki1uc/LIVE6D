@@ -1,0 +1,4 @@
+diag = [{"id": i+1, "diag": (i*27) % 756} for i in range(756)]
+
+with open("diagonal.json", "w") as f:
+    json.dump(diag, f, indent=4)
