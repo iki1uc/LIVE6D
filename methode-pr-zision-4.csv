@@ -1,0 +1,5 @@
+﻿Methode,Präzision,Geschwindigkeit,Eignung für CONTINIUM
+RAW PIPE,Atomar,Hoch,Perfekt
+NVENC / x264,Mittel,Sehr hoch,Verlustbehaftet
+PNG‑Frames,Hoch,Sehr langsam,Unbrauchbar
+WebRTC,Niedrig,Hoch,Komprimiert
