@@ -1,0 +1,4 @@
+﻿Methode,Präzision,Latenz,OBS‑Kompatibilität
+FFmpeg RAW PIPE,Atomar,Mittel,Beste Wahl
+Named Pipe,Hoch,Mittel,Stabil
+Browser Source,Mittel,Niedrig,Einfach
