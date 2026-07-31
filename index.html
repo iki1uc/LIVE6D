@@ -1,162 +1,135 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Ridvans Energie‑Schachraum</title>
-<style>
-    body {
-        margin: 0;
-        background: black;
-        overflow: hidden;
-        font-family: sans-serif;
+export function startChess9() {
+
+    const canvas = document.getElementById("live6dCanvas");
+    const gl = canvas.getContext("webgl");
+
+    if (!gl) {
+        alert("WebGL wird nicht unterstützt.");
+        return;
     }
-    canvas {
-        display: block;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // ---------------------------
+    // SHADER: Vertex
+    // ---------------------------
+    const vertexShaderSrc = `
+        attribute vec3 pos;
+        uniform mat4 rot;
+        uniform float time;
+
+        vec3 morph(vec3 p){
+            p.x += sin(time + p.x * 3.0) * 0.05;
+            p.y += cos(time + p.z * 2.0) * 0.05;
+            p.z += sin(time + p.y * 4.0) * 0.05;
+            return p;
+        }
+
+        void main(){
+            vec3 m = morph(pos);
+            gl_Position = rot * vec4(m, 1.0);
+            gl_PointSize = 8.0;
+        }
+    `;
+
+    // ---------------------------
+    // SHADER: Fragment
+    // ---------------------------
+    const fragmentShaderSrc = `
+        precision mediump float;
+        uniform float time;
+
+        void main(){
+            gl_FragColor = vec4(
+                abs(sin(time)),
+                abs(cos(time * 0.5)),
+                abs(sin(time * 0.3)),
+                1.0
+            );
+        }
+    `;
+
+    // ---------------------------
+    // Shader kompilieren
+    // ---------------------------
+    function compile(type, src){
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
+        return shader;
     }
-</style>
-</head>
-<body>
-<canvas id="scene"></canvas>
 
-<script>
-const canvas = document.getElementById("scene");
-const gl = canvas.getContext("webgl");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+    const vs = compile(gl.VERTEX_SHADER, vertexShaderSrc);
+    const fs = compile(gl.FRAGMENT_SHADER, fragmentShaderSrc);
 
-if (!gl) {
-    alert("WebGL wird nicht unterstützt.");
-}
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
 
-// --- Shader ---
-const vertex = `
-attribute vec3 pos;
-attribute float energy;
+    // ---------------------------
+    // 9×9 Brett erzeugen
+    // ---------------------------
+    const points = [];
 
-uniform mat4 rot;
-uniform float time;
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
 
-varying float v_energy;
+            const x = (col - 4) * 0.25;
+            const y = 0;
+            const z = (row - 4) * 0.25;
 
-vec3 morph(vec3 p){
-    p.x += sin(time + p.x * 3.0) * 0.05;
-    p.y += cos(time + p.z * 2.0) * 0.05;
-    p.z += sin(time + p.y * 4.0) * 0.05;
-    return p;
-}
-
-void main(){
-    v_energy = energy;
-    vec3 m = morph(pos);
-    gl_Position = rot * vec4(m, 1.0);
-    gl_PointSize = 10.0 + v_energy * 10.0;
-}
-`;
-
-const fragment = `
-precision mediump float;
-
-varying float v_energy;
-uniform float time;
-
-void main(){
-    float pulse = abs(sin(time * 0.8));
-    float glow = v_energy * 0.8 + pulse * 0.2;
-
-    vec3 color = vec3(
-        0.3 + glow,
-        0.1 + glow * 0.5,
-        0.6 + glow * 0.3
-    );
-
-    gl_FragColor = vec4(color, 1.0);
-}
-`;
-
-// --- Compile ---
-function compile(type, src){
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    return s;
-}
-
-const vs = compile(gl.VERTEX_SHADER, vertex);
-const fs = compile(gl.FRAGMENT_SHADER, fragment);
-
-const prog = gl.createProgram();
-gl.attachShader(prog, vs);
-gl.attachShader(prog, fs);
-gl.linkProgram(prog);
-gl.useProgram(prog);
-
-// --- 9×9 Feld ---
-const points = [];
-const energies = [];
-
-for (let r = 0; r < 9; r++){
-    for (let c = 0; c < 9; c++){
-        const x = (c - 4) * 0.25;
-        const y = 0;
-        const z = (r - 4) * 0.25;
-
-        points.push(x, y, z);
-
-        const dist = Math.sqrt(x*x + z*z);
-        const energy = Math.max(0, 1.0 - dist);
-        energies.push(energy);
+            points.push(x, y, z);
+        }
     }
+
+    // ---------------------------
+    // Buffer
+    // ---------------------------
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
+
+    const posLoc = gl.getAttribLocation(prog, "pos");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+
+    // ---------------------------
+    // Uniforms
+    // ---------------------------
+    const rotLoc = gl.getUniformLocation(prog, "rot");
+    const timeLoc = gl.getUniformLocation(prog, "time");
+
+    let angle = 0;
+
+    // ---------------------------
+    // Draw Loop
+    // ---------------------------
+    function draw(){
+        gl.clearColor(0,0,0,1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        angle += 0.01;
+
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+
+        const rot = new Float32Array([
+            c, 0, s, 0,
+            0, 1, 0, 0,
+            -s,0,c,0,
+            0,0,0,1
+        ]);
+
+        gl.uniformMatrix4fv(rotLoc, false, rot);
+        gl.uniform1f(timeLoc, performance.now() / 1000);
+
+        gl.drawArrays(gl.POINTS, 0, points.length / 3);
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
 }
-
-// --- Buffer ---
-const bufPos = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
-
-const posLoc = gl.getAttribLocation(prog, "pos");
-gl.enableVertexAttribArray(posLoc);
-gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-
-const bufEnergy = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, bufEnergy);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(energies), gl.STATIC_DRAW);
-
-const energyLoc = gl.getAttribLocation(prog, "energy");
-gl.enableVertexAttribArray(energyLoc);
-gl.vertexAttribPointer(energyLoc, 1, gl.FLOAT, false, 0, 0);
-
-// --- Uniforms ---
-const rotLoc = gl.getUniformLocation(prog, "rot");
-const timeLoc = gl.getUniformLocation(prog, "time");
-
-let angle = 0;
-
-// --- Draw ---
-function draw(){
-    gl.clearColor(0,0,0,1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    angle += 0.01;
-
-    const c = Math.cos(angle);
-    const s = Math.sin(angle);
-
-    const rot = new Float32Array([
-        c, 0, s, 0,
-        0, 1, 0, 0,
-        -s,0,c,0,
-        0,0,0,1
-    ]);
-
-    gl.uniformMatrix4fv(rotLoc, false, rot);
-    gl.uniform1f(timeLoc, performance.now() / 1000);
-
-    gl.drawArrays(gl.POINTS, 0, points.length / 3);
-
-    requestAnimationFrame(draw);
-}
-
-draw();
-</script>
-</body>
-</html>
