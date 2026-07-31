@@ -1,32 +1,52 @@
-function continiumRoom(p, t){
-    const D3 = {
-        x: Math.sin(t * 0.7),
-        y: Math.cos(t * 0.9),
-        z: Math.sin(t * 1.3)
-    };
+precision highp float;
 
-    const P31 = D3;
+attribute vec3 pos;
+uniform float time;
+uniform mat4 rot;
 
-    const P33 = [
+vec3 continiumRoom(vec3 p, float t){
+
+    // directV3 – deterministische Achsen
+    vec3 D3 = vec3(
+        sin(t * 0.71),
+        cos(t * 0.89),
+        sin(t * 1.37)
+    );
+
+    // Prefetcher 3×1
+    vec3 P31 = D3;
+
+    // Prefetcher 3×3 (outer product, branchless)
+    mat3 P33 = mat3(
         D3.x * D3.x, D3.x * D3.y, D3.x * D3.z,
         D3.y * D3.x, D3.y * D3.y, D3.y * D3.z,
         D3.z * D3.x, D3.z * D3.y, D3.z * D3.z
-    ];
+    );
 
-    const axis =
-        Math.sin(p.x * 12 + t) +
-        Math.cos(p.z * 9 + t * 0.5) +
-        Math.sin(p.y * 7 + t * 1.3);
+    // 756‑Achsen – komprimierte atomare Achsenfunktion
+    float axis = 
+          sin(p.x * 12.0 + t * 0.91)
+        + cos(p.y *  9.0 + t * 0.53)
+        + sin(p.z *  7.0 + t * 1.27);
 
-    const morph = {
-        x: Math.sin(t + p.x),
-        y: Math.cos(t + p.y),
-        z: Math.sin(2 * t + p.z)
-    };
+    // Zeit‑Morph – High‑Precision
+    vec3 morph = vec3(
+        sin(t + p.x * 0.97),
+        cos(t + p.y * 1.11),
+        sin(2.0 * t + p.z * 0.83)
+    );
 
-    return {
-        x: P33[0] * p.x + P33[1] * p.y + P33[2] * p.z + P31.x * axis + morph.x * 0.1,
-        y: P33[3] * p.x + P33[4] * p.y + P33[5] * p.z + P31.y * axis + morph.y * 0.1,
-        z: P33[6] * p.x + P33[7] * p.y + P33[8] * p.z + P31.z * axis + morph.z * 0.1
-    };
+    // CONTINIUM.room Operator – High‑End
+    vec3 room =
+          (P33 * p)          // Raum‑Matrix
+        + (P31 * axis)       // Achsen‑Einbettung
+        + (morph * 0.12);    // Zeit‑Morph
+
+    return room;
+}
+
+void main(){
+    vec3 r = continiumRoom(pos, time);
+    gl_Position = rot * vec4(r, 1.0);
+    gl_PointSize = 8.0;
 }
