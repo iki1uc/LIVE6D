@@ -1,0 +1,4 @@
+﻿Runtime,Größe,Schwierigkeit,GPU‑Bildverarbeitung,Gewerblich,Empfehlung
+CV‑CUDA,mittel,niedrig,ja,ja,beste Balance
+NPP,klein,mittel,ja,ja,minimalste GPU‑Bildverarbeitung
+CUDA Toolkit,klein,mittel,indirekt,ja,Basis notwendig

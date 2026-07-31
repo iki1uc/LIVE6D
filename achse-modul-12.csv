@@ -1,0 +1,13 @@
+﻿Achse,Modul,Zweck
+1,reA,Stabilisationsachse
+2,reB,Bewegungsachse
+3,reG,Gruppenachse
+4,rePP,Projektion
+5,reOMG,Ereignisachse
+6,reS,Strukturachse
+7,DA,Datenanalyse
+8,NE,Nebenachse
+9,BEN,Bench‑Auswertung
+10,X4,Präzisions‑Messung
+11,XI,Kreuzungs‑Detektor
+12,IX,Koordinaten‑Scanner

@@ -1,0 +1,5 @@
+﻿Mechanismus,Zweck,Wann nutzen?
+cuda::pipeline,Multi‑Stage Prefetch + Compute,Wenn du Compute + Copy überlappen willst
+memcpy_async + barrier,Einzel‑Prefetch,Wenn du nur einmal vorladen musst
+cuMemPrefetchAsync,Unified Memory Prefetch,Vor Kernelstart
+prefetch_batch,Multi‑Buffer Prefetch,"CUDA 13+, große Datenmengen"
