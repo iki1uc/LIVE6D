@@ -1,0 +1,7 @@
+﻿Axiom,Bedeutung,Formel
+T₀,Basis,V
+T₁,Morph,V + f(t)
+T₂,Harmonie,"\\frac{V + T_1}{2}"
+T₃,Differenz,T_1 - V
+T₄,CODEC‑Norm (korrekt),"\\(\\frac{V}{\\","V\\","_{\\sqrt{}}} \\cdot N_9\\)"
+T₅,Hierarchie,"V \\otimes R"
