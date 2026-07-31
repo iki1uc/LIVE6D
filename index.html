@@ -51,6 +51,7 @@
     padding:20px;
     overflow:auto;
   }
+<canvas id="live6dCanvas"></canvas>
 
   #panel h2 {
     color:#aaffcc;
@@ -104,6 +105,9 @@
 </div>
 
 <div id="grid"></div>
+const canvas = document.getElementById("live6dCanvas");
+const gl = canvas.getContext("webgl");
+if(!gl){ alert("WebGL wird nicht unterstützt."); }
 
 <div id="panel">
   <h2>Achse Info</h2>
