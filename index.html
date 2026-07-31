@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>LIVE6D · 756 Achsen · High‑Gloss Index</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<canvas id="live6dCanvas"></canvas>
 
 <style>
   body {
@@ -185,6 +186,9 @@ function colorModules(){
   });
 }
 </script>
+const canvas = document.getElementById("live6dCanvas");
+const gl = canvas.getContext("webgl");
+if(!gl){ alert("WebGL wird nicht unterstützt."); }
 
 </body>
 </html>
