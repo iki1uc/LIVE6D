@@ -1,0 +1,11 @@
+import csv, glob, json
+
+modules = {}
+
+for file in glob.glob("*.csv"):
+    with open(file) as f:
+        reader = csv.reader(f)
+        modules[file] = list(reader)
+
+with open("modules.json", "w") as out:
+    json.dump(modules, out, indent=4)
