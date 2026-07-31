@@ -15,9 +15,19 @@ export function startChess9() {
   const vertex = `
     attribute vec3 pos;
     uniform mat4 rot;
+    uniform float time;
+
+    vec3 morph(vec3 p){
+      p.x += sin(time + p.x * 3.0) * 0.05;
+      p.y += cos(time + p.z * 2.0) * 0.05;
+      p.z += sin(time + p.y * 4.0) * 0.05;
+      return p;
+    }
+
     void main(){
-      gl_Position = rot * vec4(pos, 1.0);
-      gl_PointSize = 6.0;
+      vec3 m = morph(pos);
+      gl_Position = rot * vec4(m, 1.0);
+      gl_PointSize = 8.0;
     }
   `;
 
@@ -28,7 +38,7 @@ export function startChess9() {
       gl_FragColor = vec4(
         abs(sin(time)),
         abs(cos(time * 0.5)),
-        0.3,
+        abs(sin(time * 0.3)),
         1.0
       );
     }
@@ -56,17 +66,69 @@ export function startChess9() {
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
 
-      const x = (col - 4) * 0.2;
+      const x = (col - 4) * 0.25;
       const y = 0;
-      const z = (row - 4) * 0.2;
+      const z = (row - 4) * 0.25;
 
       board.push(x, y, z);
     }
   }
 
+  /* Figuren platzieren */
+  const pieces = new Array(81).fill(null);
+
+  function placePieces(){
+    // Bauern
+    for(let i=9; i<18; i++) pieces[i] = "pawn";
+    for(let i=63; i<72; i++) pieces[i] = "pawn";
+
+    // Türme
+    pieces[0] = "rook";
+    pieces[8] = "rook";
+    pieces[72] = "rook";
+    pieces[80] = "rook";
+
+    // Springer
+    pieces[1] = "knight";
+    pieces[7] = "knight";
+    pieces[73] = "knight";
+    pieces[79] = "knight";
+
+    // Läufer
+    pieces[2] = "bishop";
+    pieces[6] = "bishop";
+    pieces[74] = "bishop";
+    pieces[78] = "bishop";
+
+    // Dame
+    pieces[3] = "queen";
+    pieces[75] = "queen";
+
+    // König
+    pieces[4] = "king";
+    pieces[76] = "king";
+  }
+
+  placePieces();
+
+  /* Brett + Figuren kombinieren */
+  const points = [];
+
+  for(let i=0;i<81;i++){
+    const x = board[i*3];
+    const y = board[i*3+1];
+    const z = board[i*3+2];
+
+    points.push(x, y, z);
+
+    if(pieces[i]){
+      points.push(x, y+0.15, z);
+    }
+  }
+
   const buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(board), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
   const pos = gl.getAttribLocation(prog, "pos");
   gl.enableVertexAttribArray(pos);
@@ -96,7 +158,7 @@ export function startChess9() {
     gl.uniformMatrix4fv(rotLoc, false, rot);
     gl.uniform1f(timeLoc, performance.now() / 1000);
 
-    gl.drawArrays(gl.POINTS, 0, 81);
+    gl.drawArrays(gl.POINTS, 0, points.length / 3);
 
     requestAnimationFrame(draw);
   }
