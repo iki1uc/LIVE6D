@@ -1,0 +1,4 @@
+﻿System,Felder,Zweck,Godot‑Kompatibel
+8×8,64,klassisches Schach,✔
+9×9,81,meKI‑Style / Custom,✔
+756 Achsen,756,Runtime‑Index,✔ (als Mapping)
