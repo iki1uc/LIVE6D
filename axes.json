@@ -1,0 +1,6 @@
+import json
+
+axes = [{"id": i+1, "name": f"Achse-{i+1}"} for i in range(756)]
+
+with open("axes.json", "w") as f:
+    json.dump(axes, f, indent=4)
